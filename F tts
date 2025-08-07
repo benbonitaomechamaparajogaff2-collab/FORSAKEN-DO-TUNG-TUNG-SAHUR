@@ -1,0 +1,318 @@
+-- FORSAKEN UI - Rayfield-like Template (educacional / protótipo)
+-- Use somente em Roblox Studio ou em jogos onde você tem permissão.
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- CONFIG: troca pela sua imagem (rbxassetid://ID ou URL válida)
+local BANNER_IMAGE = "rbxassetid://6023426915"
+
+-- Helpers
+local function new(class, props)
+    local obj = Instance.new(class)
+    for k,v in pairs(props or {}) do obj[k] = v end
+    return obj
+end
+local function roundCorners(frame, radius)
+    local c = Instance.new("UICorner", frame)
+    c.CornerRadius = UDim.new(0, radius or 8)
+    return c
+end
+
+-- ScreenGui
+local screenGui = new("ScreenGui", {Name="ForsakenRayUI", ResetOnSpawn=false, Parent=playerGui})
+
+-- Main window (card style)
+local window = new("Frame", {
+    Parent = screenGui,
+    Size = UDim2.new(0, 380, 0, 520),
+    Position = UDim2.new(0.05, 0, 0.08, 0),
+    BackgroundColor3 = Color3.fromRGB(22,22,25),
+    BorderSizePixel = 0,
+})
+roundCorners(window, 16)
+
+-- Shadow for style
+local shadow = new("Frame", {
+    Parent = window,
+    Size = UDim2.new(1,8,1,8),
+    Position = UDim2.new(0,-4,0,-4),
+    BackgroundColor3 = Color3.fromRGB(0,0,0),
+    BackgroundTransparency = 0.85,
+    BorderSizePixel = 0,
+})
+roundCorners(shadow, 18)
+shadow.ZIndex = 0
+
+-- Top banner circle image
+local bannerHolder = new("Frame", {
+    Parent = window,
+    Size = UDim2.new(0, 110, 0, 110),
+    Position = UDim2.new(0.5, -55, 0, -55),
+    BackgroundTransparency = 1
+})
+local banner = new("ImageLabel", {
+    Parent = bannerHolder,
+    Size = UDim2.new(1,0,1,0),
+    BackgroundColor3 = Color3.fromRGB(12,12,14),
+    Image = BANNER_IMAGE,
+    ScaleType = Enum.ScaleType.Crop,
+})
+roundCorners(banner, 55)
+
+-- Title
+local title = new("TextLabel", {
+    Parent = window,
+    Size = UDim2.new(1, -24, 0, 26),
+    Position = UDim2.new(0, 12, 0, 14),
+    BackgroundTransparency = 1,
+    Text = "FORSAKEN DO TUN TUN SAHUR",
+    Font = Enum.Font.GothamBold,
+    TextSize = 16,
+    TextColor3 = Color3.fromRGB(200,200,255),
+    TextXAlignment = Enum.TextXAlignment.Center
+})
+
+-- Close button
+local closeBtn = new("TextButton", {
+    Parent = window,
+    Size = UDim2.new(0, 34, 0, 28),
+    Position = UDim2.new(1, -46, 0, 10),
+    BackgroundColor3 = Color3.fromRGB(28,28,30),
+    Text = "X",
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+})
+roundCorners(closeBtn, 8)
+closeBtn.MouseButton1Click:Connect(function()
+    window.Visible = not window.Visible
+end)
+
+-- Dragging
+local dragging, dragStart, startPos, dragInput
+local function inputBegan(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mp = input.Position
+        local topArea = window.AbsolutePosition.Y + 140 -- banner+title area
+        if mp.Y <= topArea then
+            dragging = true
+            dragStart = mp
+            startPos = window.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end
+end
+local function inputChanged(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end
+window.InputBegan:Connect(inputBegan)
+window.InputChanged:Connect(inputChanged)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput and dragStart and startPos then
+        local delta = input.Position - dragStart
+        window.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Left panel (controls) and right panel (demo)
+local left = new("Frame", {
+    Parent = window,
+    Size = UDim2.new(0, 220, 1, -80),
+    Position = UDim2.new(0, 12, 0, 80),
+    BackgroundTransparency = 1,
+})
+local right = new("Frame", {
+    Parent = window,
+    Size = UDim2.new(1, -252, 1, -80),
+    Position = UDim2.new(0, 236, 0, 80),
+    BackgroundTransparency = 1,
+})
+-- Container scrolling area (simple)
+local list = new("Frame", {Parent = left, Size = UDim2.new(1,0,1,0), BackgroundTransparency=1})
+
+-- UI helpers: toggle and slider creators (Rayfield-like)
+local function CreateToggle(parent, text, default)
+    default = default or false
+    local holder = new("Frame", {Parent = parent, Size = UDim2.new(1,0,0,40), BackgroundColor3 = Color3.fromRGB(28,28,30)})
+    roundCorners(holder, 10)
+    local label = new("TextLabel", {Parent = holder, Size = UDim2.new(0.7, -8, 1, 0), Position = UDim2.new(0,8,0,0), BackgroundTransparency = 1, Text = text, Font=Enum.Font.Gotham, TextSize=14, TextColor3=Color3.fromRGB(225,225,225), TextXAlignment=Enum.TextXAlignment.Left})
+    local btn = new("TextButton", {Parent = holder, Size = UDim2.new(0, 56, 0, 28), Position = UDim2.new(1, -70, 0.5, -14), BackgroundColor3 = default and Color3.fromRGB(80,200,120) or Color3.fromRGB(70,70,72), Text = default and "ON" or "OFF", Font=Enum.Font.GothamBold, TextSize=13})
+    roundCorners(btn, 12)
+    local state = default
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = state and "ON" or "OFF"
+        btn.BackgroundColor3 = state and Color3.fromRGB(80,200,120) or Color3.fromRGB(70,70,72)
+        -- Simulação: disparar evento local
+        print(("Toggle %s = %s"):format(text, tostring(state)))
+    end)
+    return {Frame=holder, GetState=function() return state end}
+end
+
+local function CreateSlider(parent, text, min, max, default)
+    local holder = new("Frame", {Parent = parent, Size = UDim2.new(1,0,0,62), BackgroundTransparency = 1})
+    local label = new("TextLabel", {Parent = holder, Size = UDim2.new(1,0,0,18), Position = UDim2.new(0,6,0,0), BackgroundTransparency = 1, Text = text, Font=Enum.Font.Gotham, TextSize=13, TextColor3=Color3.fromRGB(210,210,210), TextXAlignment=Enum.TextXAlignment.Left})
+    local bar = new("Frame", {Parent = holder, Size = UDim2.new(1, -12, 0, 20), Position = UDim2.new(0,6,0,28), BackgroundColor3 = Color3.fromRGB(28,28,30)})
+    roundCorners(bar, 10)
+    local fill = new("Frame", {Parent = bar, Size = UDim2.new( ((default-min)/(max-min)), 0, 1, 0 ), BackgroundColor3 = Color3.fromRGB(90,170,255)})
+    roundCorners(fill, 10)
+    local valueLabel = new("TextLabel", {Parent = holder, Size = UDim2.new(0,52,0,18), Position = UDim2.new(1,-58,0,0), BackgroundTransparency = 1, Text = tostring(default), Font=Enum.Font.GothamBold, TextSize=13, TextColor3=Color3.fromRGB(220,220,220)})
+    local dragging = false
+    bar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+    end)
+    bar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local rel = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+            fill.Size = UDim2.new(rel, 0, 1, 0)
+            local val = math.floor(min + rel*(max-min) + 0.5)
+            valueLabel.Text = tostring(val)
+        end
+    end)
+    return {Holder=holder, GetValue=function()
+        return tonumber(valueLabel.Text)
+    end}
+end
+
+-- Create UI controls
+local y = 6
+local espPlayers = CreateToggle(list, "ESP: Survivors (Azul)", true); espPlayers.Frame.Position = UDim2.new(0,0,0, y); y = y + 46
+local espKiller = CreateToggle(list, "ESP: Killer (Branco)", true); espKiller.Frame.Position = UDim2.new(0,0,0, y); y = y + 46
+local espItems = CreateToggle(list, "ESP: Items (Amarelo)", false); espItems.Frame.Position = UDim2.new(0,0,0, y); y = y + 46
+local espGen = CreateToggle(list, "ESP: Generators (Verde)", false); espGen.Frame.Position = UDim2.new(0,0,0, y); y = y + 56
+
+local hitboxSlider = CreateSlider(list, "Hitbox Size (demo)", 20, 300, 80); hitboxSlider.Holder.Position = UDim2.new(0,0,0,y); y = y + 70
+local walkSlider = CreateSlider(list, "WalkSpeed (visual only)", 8, 60, 16); walkSlider.Holder.Position = UDim2.new(0,0,0,y); y = y + 70
+local jumpSlider = CreateSlider(list, "JumpPower (visual only)", 20, 120, 50); jumpSlider.Holder.Position = UDim2.new(0,0,0,y); y = y + 80
+
+local autoGen = CreateToggle(list, "Auto Generator (simulação 14s)", false); autoGen.Frame.Position = UDim2.new(0,0,0,y); y = y + 46
+local shaderToggle = CreateToggle(list, "Shaders: Clear Map (simulação)", false); shaderToggle.Frame.Position = UDim2.new(0,0,0,y); y = y + 46
+local staminaToggle = CreateToggle(list, "Stamina Infinita (simulação)", false); staminaToggle.Frame.Position = UDim2.new(0,0,0,y); y = y + 46
+local cloneToggle = CreateToggle(list, "ESP Clone (demo)", false); cloneToggle.Frame.Position = UDim2.new(0,0,0,y); y = y + 46
+
+-- Right panel: Demo / Map preview
+local demoBG = new("Frame", {Parent = right, Size = UDim2.new(1,0,1,0), BackgroundColor3 = Color3.fromRGB(12,12,14)})
+roundCorners(demoBG, 12)
+local demoTitle = new("TextLabel", {Parent = demoBG, Size = UDim2.new(1, -16, 0, 22), Position = UDim2.new(0,8,0,8), BackgroundTransparency = 1, Text = "Demo Map Preview", Font=Enum.Font.GothamBold, TextSize=14, TextColor3=Color3.fromRGB(200,200,200)})
+-- area where "mock" players/items appear
+local mapArea = new("Frame", {Parent = demoBG, Size = UDim2.new(1,-16,1,-44), Position = UDim2.new(0,8,0,36), BackgroundColor3 = Color3.fromRGB(6,6,8)})
+roundCorners(mapArea, 8)
+
+-- create mock markers (these are local-only visualizations, not real players)
+local function mkMarker(name, color, pos)
+    local m = new("Frame", {Parent = mapArea, Size = UDim2.new(0,28,0,28), Position = UDim2.new(pos.X, 0, pos.Y, 0), BackgroundColor3 = color})
+    roundCorners(m, 14)
+    local lbl = new("TextLabel", {Parent = m, Size = UDim2.new(1,1,0,18), Position = UDim2.new(0,0,0,6), BackgroundTransparency=1, Text=name, Font=Enum.Font.Gotham, TextSize=10, TextColor3=Color3.fromRGB(255,255,255)})
+    return m
+end
+
+local survivors = {
+    mkMarker("S1", Color3.fromRGB(40,120,220), Vector2.new(0.12,0.18)),
+    mkMarker("S2", Color3.fromRGB(40,120,220), Vector2.new(0.45,0.72)),
+    mkMarker("S3", Color3.fromRGB(40,120,220), Vector2.new(0.75,0.28)),
+}
+local killer = mkMarker("K", Color3.fromRGB(230,230,230), Vector2.new(0.85,0.6))
+local gens = {
+    mkMarker("G1", Color3.fromRGB(80,200,120), Vector2.new(0.3,0.4)),
+    mkMarker("G2", Color3.fromRGB(80,200,120), Vector2.new(0.6,0.15)),
+}
+local items = {
+    mkMarker("I1", Color3.fromRGB(240,200,80), Vector2.new(0.18,0.62)),
+    mkMarker("I2", Color3.fromRGB(240,200,80), Vector2.new(0.52,0.5)),
+}
+
+-- Hitbox visual (transparent overlay around mock markers)
+local function applyHitbox(marker, size)
+    for _,child in ipairs(marker:GetChildren()) do
+        if child.Name == "HB" then child:Destroy() end
+    end
+    local hb = new("Frame", {Parent = marker, Name = "HB", Size = UDim2.new(0, size, 0, size), Position = UDim2.new(0.5, -size/2, 0.5, -size/2), BackgroundColor3 = Color3.fromRGB(255,100,100), BackgroundTransparency = 0.8})
+    roundCorners(hb, 6)
+    hb.ZIndex = marker.ZIndex - 1
+end
+
+-- Update visuals loop
+spawn(function()
+    while true do
+        local showS = espPlayers.GetState()
+        local showK = espKiller.GetState()
+        local showI = espItems.GetState()
+        local showG = espGen.GetState()
+        local cloneOn = cloneToggle.GetState()
+        local size = hitboxSlider.GetValue()
+
+        for _,m in ipairs(survivors) do
+            m.Visible = showS
+            if showS then m.BackgroundColor3 = Color3.fromRGB(40,120,220) end
+            applyHitbox(m, size)
+            m:FindFirstChildOfClass("TextLabel").Visible = cloneOn -- demo: clone shows name
+        end
+        killer.Visible = showK
+        if killer.Visible then
+            killer.BackgroundColor3 = Color3.fromRGB(230,230,230)
+            applyHitbox(killer, size)
+            killer:FindFirstChildOfClass("TextLabel").Visible = cloneOn
+        end
+        for _,g in ipairs(gens) do g.Visible = showG end
+        for _,it in ipairs(items) do it.Visible = showI end
+
+        -- Shader demo: if on, brighten map (visual only)
+        if shaderToggle.GetState() then
+            mapArea.BackgroundColor3 = Color3.fromRGB(20,20,24)
+        else
+            mapArea.BackgroundColor3 = Color3.fromRGB(6,6,8)
+        end
+
+        -- Auto generator simulation: animate a progress on top-left of map
+        wait(0.12)
+    end
+end)
+
+-- Auto Generator simulated progress bar (visual)
+local AGLabel = new("TextLabel", {Parent = demoBG, Size = UDim2.new(0.96,0,0,18), Position = UDim2.new(0.02,0,0,8), BackgroundTransparency=1, Text="AutoGen: Idle", Font=Enum.Font.Gotham, TextSize=12, TextColor3=Color3.fromRGB(200,200,200)})
+local AGBarBg = new("Frame", {Parent = demoBG, Size = UDim2.new(0.96,0,0,8), Position = UDim2.new(0.02,0,0,28), BackgroundColor3 = Color3.fromRGB(20,20,22)})
+roundCorners(AGBarBg, 6)
+local AGFill = new("Frame", {Parent = AGBarBg, Size = UDim2.new(0,0,1,0), BackgroundColor3 = Color3.fromRGB(100,220,120)})
+roundCorners(AGFill,6)
+
+autoGen.Frame:GetPropertyChangedSignal("Visible"):Connect(function() end) -- noop to avoid lint
+
+autoGen.Frame.MouseButton1Click:Connect(function()
+    -- This click toggles the toggle (we already have toggle logic above).
+    -- We'll start/stop a simulation from script-level using GetState
+    if autoGen.GetState and autoGen.GetState() then
+        AGLabel.Text = "AutoGen: Running..."
+        local total = 14
+        local start = tick()
+        spawn(function()
+            while tick() - start < total and autoGen.GetState() do
+                local frac = (tick() - start) / total
+                AGFill.Size = UDim2.new(frac,0,1,0)
+                wait(0.05)
+            end
+            if autoGen.GetState() then
+                AGFill.Size = UDim2.new(1,0,1,0)
+                AGLabel.Text = "AutoGen: Completed"
+            else
+                AGLabel.Text = "AutoGen: Paused"
+            end
+        end)
+    else
+        AGLabel.Text = "AutoGen: Stopped"
+        AGFill.Size = UDim2.new(0,0,1,0)
+    end
+end)
+
+print("[ForsakenRayUI] Template carregado (uso educacional/protótipo).")
